@@ -187,6 +187,45 @@ class VecDB:
         
         return [row_id for _, row_id in top_k_results]
     
+    def retrieve(self, query: Annotated[np.ndarray, (1, DIMENSION)], top_k=5):
+        # Calculate similarity with all representers
+        representers = np.fromfile(self.index_path, dtype=np.float32).reshape(self.cluster_number, DIMENSION)
+        similarity_with_representers = []
+
+        for i, representer in enumerate(representers):
+            similarity = self._cal_score(query, representer)
+            similarity_with_representers.append((similarity, i))
+
+        # Get indices of the top 10 most similar representers
+        top_clusters_indices = sorted(similarity_with_representers, reverse=True)[:10]
+        
+        print("Top 10 clusters:", [idx for _, idx in top_clusters_indices])
+
+
+        all_scores = []
+        for _, cluster_index in top_clusters_indices:
+            cluster_file_path = f"./{self.db_path}/cluster{cluster_index}"
+
+            try:
+                # Read the cluster file and calculate similarity for each row in the cluster
+                with open(cluster_file_path, "rb") as cluster_file:
+                    while True:
+                        row_data = cluster_file.read((DIMENSION + 1) * ELEMENT_SIZE)
+                        if not row_data:
+                            break
+                        row = np.frombuffer(row_data, dtype=np.float32)
+                        row_id, row_vector = row[0], row[1:]  
+                        score = self._cal_score(query, row_vector)
+                        all_scores.append((score, row_id))  
+            except FileNotFoundError:
+                print(f"Cluster file not found: {cluster_file_path}")
+                continue
+
+        # get th e top k scores 
+        top_k_results = sorted(all_scores, key=lambda x: x[0], reverse=True)[:top_k]
+        
+        return [row_id for _, row_id in top_k_results]
+    
     def _cal_score(self, vec1, vec2):
         dot_product = np.dot(vec1, vec2)
         norm_vec1 = np.linalg.norm(vec1)
