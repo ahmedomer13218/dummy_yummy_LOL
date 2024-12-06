@@ -60,10 +60,10 @@ class VecDB:
         # mmap_vectors.flush()
         # #TODO: might change to call insert in the index, if you need
         # self._build_index()
-        print('begin clustering')
+
         clustering = MiniBatchKMeans(n_clusters=self.cluster_number, n_init=1, verbose=True,batch_size=4096)
         clustering.fit(rows)
-        print('after clustering')
+
         labels = clustering.predict(rows)
         representers = clustering.cluster_centers_
         self.clusters_files(rows, labels)
@@ -72,20 +72,20 @@ class VecDB:
     def clusters_files(self, rows, labels):
         os.makedirs(self.db_path, exist_ok=True)
         clusters = [open(f"./{self.db_path}/cluster{i}", "ab") for i in range(self.cluster_number)]
-        print('before writing clusters')
+
         for i in range(len(rows)):
             row_data = np.hstack(([i], rows[i])).astype(np.float32).tobytes()
             clusters[labels[i]].write(row_data)
         for f in clusters:
             f.close()
-        print('after writing clusters')
+
 
     def representers_index(self,  representers):
-        print('before writing representers')
+
         with open(self.index_path, "ab") as rep_file:
             for i in representers:
                 rep_file.write(i)
-        print('after writing representers')
+
 
 
 
@@ -198,8 +198,6 @@ class VecDB:
 
         # Get indices of the top 20 most similar representers
         top_clusters_indices = sorted(similarity_with_representers, reverse=True)[:20]
-        
-        print("Top 20 clusters:", [idx for _, idx in top_clusters_indices])
 
 
         all_scores = []
