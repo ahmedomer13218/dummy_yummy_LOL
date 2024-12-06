@@ -196,10 +196,10 @@ class VecDB:
             similarity = self._cal_score(query, representer)
             similarity_with_representers.append((similarity, i))
 
-        # Get indices of the top 10 most similar representers
-        top_clusters_indices = sorted(similarity_with_representers, reverse=True)[:10]
+        # Get indices of the top 20 most similar representers
+        top_clusters_indices = sorted(similarity_with_representers, reverse=True)[:20]
         
-        print("Top 10 clusters:", [idx for _, idx in top_clusters_indices])
+        print("Top 20 clusters:", [idx for _, idx in top_clusters_indices])
 
 
         all_scores = []
