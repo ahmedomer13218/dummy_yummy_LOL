@@ -5,6 +5,10 @@ import time
 from dataclasses import dataclass
 from typing import List
 
+DB_SEED_NUMBER = 42
+ELEMENT_SIZE = np.dtype(np.float32).itemsize
+DIMENSION = 70
+
 @dataclass
 class Result:
     run_time: float
@@ -18,19 +22,20 @@ def run_queries(db, np_rows, top_k, num_runs):
         query = np.random.random((1,70))
         
         tic = time.time()
-        db_ids = db.retrieve(query, top_k)
+        db_ids = db.retrieve(query, top_k)  # return the best row id(number) only 
         toc = time.time()
         run_time = toc - tic
         
         tic = time.time()
+        # some how return the actual id of the generated queries 
         actual_ids = np.argsort(np_rows.dot(query.T).T / (np.linalg.norm(np_rows, axis=1) * np.linalg.norm(query)), axis= 1).squeeze().tolist()[::-1]
         toc = time.time()
-        np_run_time = toc - tic
+        np_run_time = toc - tic 
         
         results.append(Result(run_time, top_k, db_ids, actual_ids))
     return results
 
-def eval(results: List[Result]):
+def eval(results: List[Result]): # compair between the retrieved ids and the actual ones 
     # scores are negative. So getting 0 is the best score.
     scores = []
     run_time = []
@@ -54,9 +59,17 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    db = VecDB(db_size = 10**2)
+    # db = VecDB(db_size = 10**2)
 
-    all_db = db.get_all_rows()
+    # all_db = db.get_all_rows()
 
-    res = run_queries(db, all_db, 5, 10)
+    # res = run_queries(db, all_db, 5, 10) # 5-> top_k  # 10 -> number of queries 
+    # print(eval(res))
+
+    db=VecDB(database_file_path='saved_db',db_size=10000,new_db=False)
+    
+    rng = np.random.default_rng(DB_SEED_NUMBER)
+    vectors = rng.random((10000, DIMENSION), dtype=np.float32)
+    db.insert_records(vectors)
+    res = run_queries(db, vectors, 5, 10)
     print(eval(res))
